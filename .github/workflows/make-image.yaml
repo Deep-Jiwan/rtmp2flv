@@ -11,5 +11,5 @@ jobs:
             - name: Build and push the image
               run: |
                 docker login --username deep-jiwan --password ${{ secrets.GH_ACCESS }} ghcr.io
-                docker build -tag ghcr.io/deep-jiwan/rtmp2flv:latest
+                docker build --tag ghcr.io/deep-jiwan/rtmp2flv:beta . 
                 docker push ghcr.io/deep-jiwan/rtmp2flv:beta
