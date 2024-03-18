@@ -1,0 +1,51 @@
+<!-- This is a template HTML for how the flv player can be used.
+    Run the server and open this page to view the player
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live HTTP-FLV Stream</title>
+    
+    <!-- Include flv.js CSS -->
+    <link href="https://cdn.bootcss.com/flv.js/1.5.0/flv.min.js" rel="stylesheet">
+</head>
+
+<body>
+    <h3>RTMP STREAM PLAYER ON HTTP USING SUPPORTED FLV</h3>
+    <div class="container">
+        <video id="videoElement" width="1280" height="720" controls></video>
+    </div>
+
+    <!-- Include flv.js JavaScript -->
+    <script src="https://cdn.bootcss.com/flv.js/1.5.0/flv.min.js"></script>
+    <script>
+        // The IP to be used is the IP of the server / where the rtmp stream is being sent to.
+        if (flvjs.isSupported()) {
+            var videoElement = document.getElementById('videoElement');
+            var flvPlayer = flvjs.createPlayer({
+                type: 'flv',
+                url: 'http://localhost:8000/live/livestream.flv'
+            });
+            flvPlayer.attachMediaElement(videoElement);
+            flvPlayer.load();
+            flvPlayer.play();
+
+            // Add volume control
+            videoElement.volume = 0.5; // Set initial volume to 50%
+
+            // Add pause/play functionality
+            videoElement.onclick = function() {
+                if (videoElement.paused) {
+                    videoElement.play();
+                } else {
+                    videoElement.pause();
+                }
+            };
+        }
+    </script>
+</body>
+</html>
