@@ -35,7 +35,7 @@ Local Dev:
 
 Docker Deployement:
 1. Run the command
-   `docker pull ghcr.io/deep-jiwan/rtmp2flv:latest`
+   `docker pull ghcr.io/deep-jiwan/rtmp2flv:beta`
 2. Run the docker container with the following port and environment variable
    `docker run -d -p 1935:1935 -p 80:80 -p 8000:8000 -e HOST_IP=ip_address ghcr.io/deep-jiwan/rtmp2flv:latest`  
    Replace 'ip_address' with the IP Address of the server / app hosting machine
