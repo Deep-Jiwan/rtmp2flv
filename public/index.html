@@ -13,9 +13,10 @@
     <!-- Include flv.js CSS -->
     <link href="https://cdn.bootcss.com/flv.js/1.5.0/flv.min.js" rel="stylesheet">
 </head>
-
-<body>
-    <h3>RTMP STREAM PLAYER ON HTTP USING SUPPORTED FLV</h3>
+<body bgcolor="black">
+    
+<center>
+    <h3 style="color: white;">RTMP STREAM PLAYER ON HTTP USING SUPPORTED FLV</h3>
     <div class="container">
         <video id="videoElement" width="1280" height="720" controls></video>
     </div>
@@ -23,29 +24,56 @@
     <!-- Include flv.js JavaScript -->
     <script src="https://cdn.bootcss.com/flv.js/1.5.0/flv.min.js"></script>
     <script>
-        // The IP to be used is the IP of the server / where the rtmp stream is being sent to.
-        if (flvjs.isSupported()) {
-            var videoElement = document.getElementById('videoElement');
-            var flvPlayer = flvjs.createPlayer({
-                type: 'flv',
-                url: 'http://localhost:8000/live/livestream.flv'
-            });
-            flvPlayer.attachMediaElement(videoElement);
-            flvPlayer.load();
-            flvPlayer.play();
+        function initializeVideoPlayer(streamLink) {
+    if (flvjs.isSupported()) {
+        var videoElement = document.getElementById('videoElement');
+        var flvPlayer = flvjs.createPlayer({
+            type: 'flv',
+            url: streamLink
+        });
+        flvPlayer.attachMediaElement(videoElement);
+        flvPlayer.load();
+        flvPlayer.play();
 
-            // Add volume control
-            videoElement.volume = 0.5; // Set initial volume to 50%
+        // Add volume control
+        videoElement.volume = 0.7; // Set initial volume to 70%
 
-            // Add pause/play functionality
-            videoElement.onclick = function() {
-                if (videoElement.paused) {
-                    videoElement.play();
-                } else {
-                    videoElement.pause();
-                }
-            };
-        }
+        // Add pause/play functionality
+        videoElement.onclick = function () {
+            if (videoElement.paused) {
+                videoElement.play();
+            } else {
+                videoElement.pause();
+            }
+        };
+    }
+}
+
+function fetchAPIStreamLink(){
+    // Return the fetch Promise
+    return fetch('api/streamLink')
+        .then(response => response.json())
+        .then(config => {
+            // Return the link value
+            return config.link;
+        });
+}
+
+function startVideoPlayer() {
+    // Call fetchAPIStreamLink and wait for it to resolve
+    fetchAPIStreamLink().then(link => {
+        // Code to execute using the link fetched
+        console.log('FLV Stream: ', link);
+        initializeVideoPlayer(link);
+    }).catch(error => {
+        console.error('Error fetching stream link:', error);
+    });
+}
+
+
+//fetchAPIStreamLink(); debug only
+startVideoPlayer();
     </script>
+    </center>
 </body>
 </html>

@@ -21,7 +21,7 @@ console.log("Stream Link: ",StreamLink);
 const config = {
     rtmp: {
         port: 1935,
-        chunk_size: 60000,
+        chunk_size: 10000,
         gop_cache: true,
         ping: 60,
         ping_timeout: 30
