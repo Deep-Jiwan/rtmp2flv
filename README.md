@@ -1,4 +1,4 @@
-A node js app that listens for an rtmp stream and then publishes on a webpage using supported HTTP-FLV   
+A node js app that listens for an rtmp stream and then publishes on a webpage using supported HTTP-FLV, i think..     
 - Low latency  
 - Low spec  
 - Docker friendly  
@@ -49,7 +49,7 @@ Docker Deployement:
 
 Good Luck!
 
-Terminal Clarification:  
+Terms Clarification:  
 - Host IP is the IP address of the server that is hosting the application.  
 - Server ip is the same as Host IP  
 
