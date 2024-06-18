@@ -6,7 +6,7 @@ A node js app that listens for an rtmp stream and then publishes on a webpage us
 
 Configuration:  
 
-HOST_IP=source IP of the RTMP stream  
+HOST_IP=ip_address of the server  
 
 Streaming Settings = {  
 
