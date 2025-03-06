@@ -82,7 +82,7 @@ node server.js
 ### Pull the Latest Docker Image:
 
 ```bash
-docker pull ghcr.io/deep-jiwan/rtmp2flv:latest
+docker pull ghcr.io/deep-jiwan/rtmp2flv:beta
 ```
 
 ### Run the Docker Container:
@@ -98,7 +98,7 @@ docker run -d \
   -e INTERNAL_STREAM_PORT=1200 \
   -e EXPOSED_IP=localhost:3000 \
   -e MAIN_PORT=3000 \
-  ghcr.io/deep-jiwan/rtmp2flv:latest
+  ghcr.io/deep-jiwan/rtmp2flv:beta
 ```
 
 #### Test the Application:
@@ -141,4 +141,4 @@ Example `data/link.json`:
 Special thanks to **NodeMedia** for creating the WebAssembly module that enables FLV streaming on the web page.\
 https\://www\.nodemedia.cn/
 
-Thank you
+Thank you for visiting
