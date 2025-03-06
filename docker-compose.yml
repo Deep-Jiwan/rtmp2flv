@@ -6,10 +6,11 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "80:80"
-      - "8000:8000"
+      - "3000:3000"
+      - "1200:1200"
       - "1935:1935"
     environment:
-      - HOST_IP=${HOST_IP}
-    env_file:
-      - .env
+      STREAM_IP: "localhost"
+      INTERNAL_STREAM_PORT: "1200"
+      EXPOSED_IP: "localhost:3000"
+      MAIN_PORT: "3000"
