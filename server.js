@@ -49,7 +49,7 @@ app.use(express.static(path.join(__dirname, "public")));
 // API endpoint for dynamic stream link generation
 app.get("/api/streamLink/main", (req, res) => {
   // Dynamically generate the stream link using the host IP
-  const streamLink = `http://${EXPOSED_IP}/live/`;
+  const streamLink = `http://${EXPOSED_IP}/proxy/`;
   console.log("Providing stream link:", streamLink);
   res.json({ link: streamLink });
 });

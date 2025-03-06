@@ -3,22 +3,79 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FLV Video Player</title>
+  <title>Responsive HTML Page</title>
   <!-- External CSS for the video player -->
   <link rel="stylesheet" href="/css/videoplayer.css">
+  
+  <!-- Import Poppins font from Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  
   <!-- NodePlayer.js (WASM Decoder) -->
   <script src="/js/NodePlayer.min.js"></script>
+
+  <!-- Inline style to apply the Poppins font to the entire page -->
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+    }
+  </style>
 </head>
 <body class="bg-[#1E1E1E] text-white">
-  <!-- Container for the video player -->
+  <!-- Header (10% of viewport height) -->
+  <header class="h-[10vh] bg-gray-800 flex items-center justify-between px-8">
+    <!-- Left side: Welcome text with shadow -->
+    <div class="flex flex-col">
+      <h1 class="text-2xl font-semibold shadow-2xl">Welcome User</h1>
+      <p class="text-sm shadow-2xl">NBA Finals Live Stream</p>
+    </div>
+    <!-- Right side: Buttons container takes 25% of header width -->
+    <div class="w-1/4 flex gap-2">
+      <button class="bg-white text-black rounded-[10px] shadow-2xl flex-1 h-10 flex items-center justify-center transition transform duration-150 ease-in-out hover:scale-105 active:scale-95">
+        1-View
+      </button>
+      <button class="bg-white text-black rounded-[10px] shadow-2xl flex-1 h-10 flex items-center justify-center transition transform duration-150 ease-in-out hover:scale-105 active:scale-95">
+        2-View
+      </button>
+      <button class="bg-white text-black rounded-[10px] shadow-2xl flex-1 h-10 flex items-center justify-center transition transform duration-150 ease-in-out hover:scale-105 active:scale-95">
+        3-View
+      </button>
+      <button class="bg-white text-black rounded-[10px] shadow-2xl flex-1 h-10 flex items-center justify-center transition transform duration-150 ease-in-out hover:scale-105 active:scale-95">
+        4-View
+      </button>
+    </div>
+  </header>
 
-  <div id="video2" class="w-full h-[70vh] flex justify-center items-center"></div>
-  <!-- Our custom video player logic -->
+  <!-- Main content (80% of viewport height) -->
+  <main class="h-[80vh] flex items-center justify-center">
+    <!-- Parent container at 80% width -->
+    <div class="w-full h-full flex flex-col md:flex-row items-center justify-center">
+      <!-- PlayerDiv 1 -->
+      <div class="m-5 flex-1">
+        <div class="aspect-video">
+          <div id="video2" class=""></div>
+        </div>
+      </div>
+      <!-- PlayerDiv 2 -->
+      <div class="m-5 flex-1">
+        <div class="aspect-video">
+          <div id="video3" class="w-full h-full"></div>
+        </div>
+      </div>      
+    </div>
+  </main>
+
+  <!-- Footer (10% of viewport height) -->
+  <footer class="h-[10vh] bg-gray-800 text-white flex items-center justify-center">
+    Footer
+  </footer>
+
   <script src="/js/videoPlayer.js"></script>
   <script>
     spawnVideoPlayer("#video2", "");
+    spawnVideoPlayer("#video3", "");
   </script>
 </body>
 </html>

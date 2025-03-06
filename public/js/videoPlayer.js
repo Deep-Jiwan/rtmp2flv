@@ -19,7 +19,7 @@ class VideoPlayer {
       const uniqueId = Date.now() + Math.floor(Math.random() * 1000);
       this.uniqueId = uniqueId;
       this.container.innerHTML = `
-        <div id="videoContainer-${uniqueId}" class="videoContainer relative w-[50vw] aspect-video rounded-[10px] shadow-2xl">
+        <div id="videoContainer-${uniqueId}" class="videoContainer relative w-full aspect-video rounded-[10px] shadow-2xl">
           <canvas id="videoCanvas-${uniqueId}" width="1920" height="1080" class="videoCanvas absolute inset-0 w-full h-full bg-black rounded-[10px]"></canvas>
           <!-- Central play button -->
           <button id="centerPlayButton-${uniqueId}" class="centerPlayButton">
