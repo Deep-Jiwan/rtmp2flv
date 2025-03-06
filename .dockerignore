@@ -3,3 +3,7 @@ backup
 .vscode
 .env
 gituploadhow.instructions
+.dist
+.github
+demo
+.gitignore
