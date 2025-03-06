@@ -1,3 +1,4 @@
+// video player class to abstract player creation
 class VideoPlayer {
     constructor(container, streamLink, options = {}) {
       this.container = container;
