@@ -1,59 +1,92 @@
-const NodeMediaServer = require('node-media-server');
-const express = require('express');
-const path = require('path');
-
-// port
-const PORT = 80;
-
-
-// Stream link
+// server.js
+const express = require("express");
+const path = require("path");
+const fs = require('fs');
+const { createProxyMiddleware } = require("http-proxy-middleware");
+const NodeMediaServer = require("node-media-server");
 require("dotenv").config();
-const hostip = process.env.HOST_IP;;
-console.log("Server IP: ",hostip);
-const StreamLink = 'http://' + hostip + ':8000/live/livestream.flv'
-console.log("Stream Link: ",StreamLink);
 
-// Manual server link. Uncomment the next line to discard the environment set IP address
-// StreamLink = 'http://iphere:8000/live/
+// Load configuration from environment variables or fallback to defaults
+const STREAM_IP = process.env.STREAM_IP || "localhost";
+const MAIN_PORT = process.env.MAIN_PORT || 3000;
+const INTERNAL_STREAM_PORT = process.env.INTERNAL_STREAM_PORT || 8000;
+const EXPOSED_IP = process.env.EXPOSED_IP;
 
-
-// Set up NodeMediaServer for RTMP and HTTP-FLV streaming
-const config = {
-    rtmp: {
-        port: 1935,
-        chunk_size: 60000,
-        gop_cache: true,
-        ping: 60,
-        ping_timeout: 30
-    },
-    http: {
-        port: 8000,
-        mediaroot: './media',
-        allow_origin: '*',
-        webroot: './public',
-        mediaroot: './media',
-        allow_origin: '*'
-    }
+// NodeMediaServer configuration on an internal port (not exposed directly)
+const nmsConfig = {
+  rtmp: {
+    port: 1935,
+    chunk_size: 60000,
+    gop_cache: true,
+    ping: 60,
+    ping_timeout: 30,
+  },
+  http: {
+    port: INTERNAL_STREAM_PORT, // Internal port for streaming endpoints
+    mediaroot: "./media",
+    allow_origin: "*",
+  },
 };
 
-const nms = new NodeMediaServer(config);
+const nms = new NodeMediaServer(nmsConfig);
 nms.run();
 
-// Set up Express.js server to serve static files
+// Express setup on the main port
 const app = express();
-app.use(express.static('public'));
 
+// Proxy streaming requests to NodeMediaServer's HTTP server
+app.use(
+  "/proxy",
+  createProxyMiddleware({
+    target: `http://${STREAM_IP}:${INTERNAL_STREAM_PORT}/live/livestream.flv`,
+    changeOrigin: true,
+  })
+);
 
-// Set up a route to render your HTML template and inject the StreamLink variable
-app.get('/api/StreamLink', (req, res) => {
-    console.log("| API | : Sending link:",StreamLink);
-    const linkResponse = {
-        link : StreamLink
-    };
+// Serve static files from the "public" directory
+app.use(express.static(path.join(__dirname, "public")));
 
-    res.json(linkResponse);
+// API endpoint for dynamic stream link generation
+app.get("/api/streamLink/main", (req, res) => {
+  // Dynamically generate the stream link using the host IP
+  const streamLink = `http://${EXPOSED_IP}/live/`;
+  console.log("Providing stream link:", streamLink);
+  res.json({ link: streamLink });
 });
 
-app.listen(PORT, () => {
-    console.log('Server is running on port '+ PORT);
+// Additional routes to serve HTML pages
+app.get("/home", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "home.html"));
+});
+
+app.get("/test", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "test.html"));
+});
+app.get("/player", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "player.html"));
+});
+
+app.get('/api/links', (req, res) => {
+  const configPath = path.join(__dirname, '/data/links.json');
+
+  fs.readFile(configPath, 'utf8', (err, data) => {
+    if (err) {
+      console.error('Error reading links.config.json:', err);
+      return res.status(500).json({ error: 'Failed to read links configuration.' });
+    }
+    
+    try {
+      // Parse JSON to verify it's valid (optional - you can simply send raw data if preferred)
+      const links = JSON.parse(data);
+      res.json(links);
+    } catch (parseError) {
+      console.error('Error parsing links.json:', parseError);
+      res.status(500).json({ error: 'Invalid JSON in links configuration.' });
+    }
+  });
+});
+
+// Start Express on the main port
+app.listen(MAIN_PORT, () => {
+  console.log(`Express server is running on port ${MAIN_PORT}`);
 });

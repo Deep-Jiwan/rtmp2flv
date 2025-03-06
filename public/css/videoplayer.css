@@ -1,0 +1,136 @@
+/* Custom volume slider container styling */
+.volume-slider-container {
+    width: 0;
+    height: 45px;
+    overflow: hidden;
+    transition: all 0.3s ease-in-out;
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 45px;
+    opacity: 0;
+}
+.volume-slider-container.expanded {
+    padding: 15px;
+    margin-left: 5px;
+    width: 100px;
+    opacity: 1;
+}
+
+/* Horizontal slider styling */
+.horizontal-slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 8px;
+    background: #4b5563;
+    border-radius: 5px;
+    outline: none;
+}
+.horizontal-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border-radius: 50%;
+    cursor: pointer;
+}
+.horizontal-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+/* Fullscreen adjustments for video container */
+:fullscreen .videoContainer,
+:-webkit-full-screen .videoContainer {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Central overlay play button styling */
+.centerPlayButton {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 9999px;
+    transition: opacity 0.3s ease-in-out;
+    cursor: pointer;
+}
+
+/* Bottom left play/pause button styling */
+.bottomLeftButton {
+    position: absolute;
+    bottom: 1rem;
+    left: 1rem;
+    z-index: 10;
+    padding: 0.75rem;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 9999px;
+    transition: opacity 0.3s ease-in-out;
+    cursor: pointer;
+    opacity: 0;
+}
+
+
+/* Container for the link selector (drop down) */
+.linkSelectorContainer {
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 9999px;
+  padding: 0.25rem 0.5rem; /* Slightly smaller padding */
+  transition: all 0.3s ease-in-out;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  opacity: 0; /* Hidden by default */
+  pointer-events: none; /* Avoid interaction when hidden */
+}
+
+/* Show the selector when its parent container is hovered */
+.videoContainer:hover .linkSelectorContainer {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Style the select element */
+.linkSelectorContainer select {
+    background: rgba(0, 0, 0, 0);
+    border-radius: 9999px;
+    color: #fff;
+    font-size: 0.875rem; 
+    outline: none;
+    padding: 0.25rem 0.75rem;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    transition: transform 0.3s ease;
+    /* This is the uncollapsed version of the drop down */
+  }
+  
+  /* On hover, scale up the select element */
+  .linkSelectorContainer select:hover {
+    transform: scale(1.05);
+  }
+  
+  /* Optional: Hide the default arrow in some browsers */
+  .linkSelectorContainer select::-ms-expand {
+    display: none;
+  }
+
+
+
+/* Attempt to style the dropdown options */
+.linkSelectorContainer select option {
+    background: rgba(0, 0, 0, 0.7) !important;
+    color: #fff !important;
+    border-radius: 9999px !important;
+    padding: 0.5rem 1rem !important;
+    transition: background 0.3s ease, transform 0.3s ease;
+  }
+  
+  /* Attempt to add a hover effect */
+  .linkSelectorContainer select option:hover {
+    background: rgba(0, 0, 0, 0.85) !important;
+    transform: scale(1.02);
+  }

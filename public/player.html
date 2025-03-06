@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Structured NodePlayer.js WASM FLV Player</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Custom volume slider container styling */
+    .volume-slider-container {
+      width: 0;
+      height: 45px;
+      overflow: hidden;
+      transition: all 0.3s ease-in-out;
+      background-color: rgba(0, 0, 0, 0.7);
+      border-radius: 45px;
+      opacity: 0;
+    }
+    .volume-slider-container.expanded {
+      padding: 15px;
+      margin-left: 5px;
+      width: 100px;
+      opacity: 1;
+    }
+    /* Horizontal slider styling */
+    .horizontal-slider {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 8px;
+      background: #4b5563;
+      border-radius: 5px;
+      outline: none;
+    }
+    .horizontal-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      background: #fff;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    .horizontal-slider::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      background: #fff;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    /* Fullscreen adjustments for video container */
+    :fullscreen #videoContainer,
+    :-webkit-full-screen #videoContainer {
+      width: 100% !important;
+      height: 100% !important;
+    }
+  </style>
+</head>
+<body class="bg-[#1E1E1E] text-white">
+  <!-- Div 1: Top Controls (10% of viewport height) -->
+  <div id="topControls" class="w-full h-[20vh] flex flex-col justify-center items-center">
+    <div class="flex items-center space-x-2">
+      <input id="url" type="text" placeholder="Enter FLV Stream URL" 
+             value="http://localhost:3000/live" 
+             class="border border-gray-300 p-2 rounded-l-lg w-80 text-black">
+      <button id="playButton" class="bg-black bg-opacity-70 text-white px-6 py-3 rounded">
+        Play
+      </button>
+      <button id="stopButton" class="bg-black bg-opacity-70 text-white px-6 py-3 rounded">
+        Stop
+      </button>
+      <select id="buffertime" class="border border-gray-300 p-2 rounded text-black">
+        <option>0</option>
+        <option selected>100</option>
+        <option>300</option>
+        <option>500</option>
+        <option>1000</option>
+        <option>2000</option>
+        <option>3000</option>
+      </select>
+    </div>
+    <div class="mt-2">
+      <span class="font-semibold">FPS:</span> <span id="fps">0</span>
+      <br>
+    </div>
+  </div>
+
+  <!-- Div 2: Video Section (80% of viewport height) -->
+  <div id="videoSection" class="w-full h-[70vh] flex justify-center items-center">
+    <!-- Video Container with 16:9 aspect ratio, 70% viewport width, centered, with rounded corners and a shadow -->
+    <div id="videoContainer" class="relative w-[70vw] aspect-video rounded-[10px] shadow-2xl">
+      <canvas id="video1" width="1920" height="1080" 
+              class="absolute inset-0 w-full h-full bg-black rounded-[10px]"></canvas>
+      <!-- Overlay Custom Controls -->
+      <div id="customControls" class="absolute bottom-4 right-4 flex items-center gap-4 transition-opacity duration-300">
+        <button id="muteBtn" class="bg-black bg-opacity-70 p-3 rounded-full">
+          <svg id="muteIcon" class="w-6 h-6" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M9 5.82V2L3 8l6 6v-3.82l4.18 4.18L15 14l-5-5 5-5-1.82-1.82L9 5.82z"/>
+          </svg>
+        </button>
+        <div id="volumeControl" class="relative flex items-center">
+          <button id="volumeBtn" class="bg-black bg-opacity-70 p-3 rounded-full">
+            <svg id="volumeIcon" class="w-6 h-6" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M3 8v4h4l5 5V3l-5 5H3z"/>
+            </svg>
+          </button>
+          <div id="volumeSliderContainer" class="volume-slider-container flex items-center">
+            <input id="volumeSlider" type="range" min="0" max="1" step="0.05" value="0.5" 
+                   class="horizontal-slider">
+          </div>
+        </div>
+        <button id="fullscreenBtn" class="bg-black bg-opacity-70 p-3 rounded-full">
+          <svg class="w-6 h-6" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M4 4h6v2H6v4H4V4zm12 0v6h-2V6h-4V4h6zm0 12h-6v-2h4v-4h2v6zm-12 0v-6h2v4h4v2H4z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Div 3: Empty Section (10% of viewport height) -->
+  <div id="emptySection" class="w-full h-[5vh]">
+    <!-- This section is intentionally left empty -->
+  </div>
+
+  <!-- NodePlayer.js (WASM Decoder) -->
+  <script src="/js/NodePlayer.min.js"></script>
+  <script>
+    // Utility function for query parameters
+    function getQueryVariable(variable) {
+      var query = window.location.search.substring(1);
+      var vars = query.split("&");
+      for (var i = 0; i < vars.length; i++) {
+        var pair = vars[i].split("=");
+        if (pair[0] === variable) { return pair[1]; }
+      }
+      return false;
+    }
+
+    let player;
+    let isMuted = false;
+    let lastVolume = 0.5;
+
+    // Load and initialize NodePlayer.js
+    NodePlayer.load(() => {
+      player = new NodePlayer();
+      player.setKeepScreenOn();
+      player.setView("video1"); // canvas element
+      // Set initial buffer time (default from dropdown: 100)
+      player.setBufferTime(document.getElementById("buffertime").value);
+
+      player.on("start", () => { console.log("player on start"); });
+      player.on("stop", () => { console.log("player on stop"); });
+      player.on("error", (e) => { console.log("player on error", e); });
+      player.on("videoInfo", (w, h, codec) => { console.log("player on video info", w, h, codec); });
+      player.on("audioInfo", (r, c, codec) => { console.log("player on audio info", r, c, codec); });
+      player.on("stats", (stats) => {
+        console.log("player on stats=", stats);
+        document.getElementById("fps").innerText = stats.fps;
+      });
+    });
+
+    // Update URL if provided as a query parameter
+    const argurl = getQueryVariable("url");
+    if (argurl) {
+      document.getElementById("url").value = argurl;
+    }
+
+    // Control functions for play, stop, and buffer time change
+    function startFunc() {
+      player.start(document.getElementById("url").value);
+    }
+    function stopFunc() {
+      player.stop();
+    }
+    function bufferChange(event) {
+      player.setBufferTime(event.target.value);
+    }
+
+    // Attach event listeners to top controls
+    document.getElementById("playButton").addEventListener("click", startFunc);
+    document.getElementById("stopButton").addEventListener("click", stopFunc);
+    document.getElementById("buffertime").addEventListener("change", bufferChange);
+
+    // Overlay controls
+    const muteBtn = document.getElementById("muteBtn");
+    const muteIcon = document.getElementById("muteIcon");
+    const volumeSlider = document.getElementById("volumeSlider");
+    const volumeSliderContainer = document.getElementById("volumeSliderContainer");
+    const volumeControl = document.getElementById("volumeControl");
+    const fullscreenBtn = document.getElementById("fullscreenBtn");
+
+    // Volume slider expansion on hover
+    volumeControl.addEventListener("mouseenter", () => {
+      volumeSliderContainer.classList.add("expanded");
+    });
+    volumeControl.addEventListener("mouseleave", () => {
+      volumeSliderContainer.classList.remove("expanded");
+    });
+
+    muteBtn.addEventListener("click", () => {
+      isMuted = !isMuted;
+      if (isMuted) {
+        lastVolume = volumeSlider.value;
+        player.setVolume(0);
+        muteIcon.innerHTML = '<path d="M10 8.586l-2.293-2.293-1.414 1.414L8.586 10l-2.293 2.293 1.414 1.414L10 11.414l2.293 2.293 1.414-1.414L11.414 10l2.293-2.293-1.414-1.414L10 8.586z"/>';
+      } else {
+        player.setVolume(lastVolume);
+        muteIcon.innerHTML = '<path d="M9 5.82V2L3 8l6 6v-3.82l4.18 4.18L15 14l-5-5 5-5-1.82-1.82L9 5.82z"/>';
+      }
+    });
+
+    volumeSlider.addEventListener("input", (e) => {
+      player.setVolume(e.target.value);
+      if (parseFloat(e.target.value) > 0) {
+        isMuted = false;
+        muteIcon.innerHTML = '<path d="M9 5.82V2L3 8l6 6v-3.82l4.18 4.18L15 14l-5-5 5-5-1.82-1.82L9 5.82z"/>';
+      }
+    });
+
+    // Fullscreen fix: request fullscreen on the video container element directly.
+    fullscreenBtn.addEventListener("click", () => {
+      const container = document.getElementById("videoContainer");
+      if (!document.fullscreenElement) {
+        container.requestFullscreen().catch(err => console.error(err));
+      } else {
+        document.exitFullscreen();
+      }
+    });
+
+
+    const videoContainer = document.getElementById("videoContainer");
+    const customControls = document.getElementById("customControls");
+
+    videoContainer.addEventListener("mouseenter", () => {
+      customControls.classList.remove("opacity-0");
+      customControls.classList.add("opacity-100");
+    });
+
+    videoContainer.addEventListener("mouseleave", () => {
+      customControls.classList.remove("opacity-100");
+      customControls.classList.add("opacity-0");
+    });
+  </script>
+</body>
+</html>

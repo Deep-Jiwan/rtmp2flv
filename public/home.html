@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Structured NodePlayer.js WASM FLV Player</title>
+  <!-- Note: For production, install Tailwind via PostCSS or the CLI as per https://tailwindcss.com/docs/installation -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Custom volume slider container styling */
+    .volume-slider-container {
+      width: 0;
+      height: 45px;
+      overflow: hidden;
+      transition: all 0.3s ease-in-out;
+      background-color: rgba(0, 0, 0, 0.7);
+      border-radius: 45px;
+      opacity: 0;
+    }
+    .volume-slider-container.expanded {
+      padding: 15px;
+      margin-left: 5px;
+      width: 100px;
+      opacity: 1;
+    }
+    /* Horizontal slider styling */
+    .horizontal-slider {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 8px;
+      background: #4b5563;
+      border-radius: 5px;
+      outline: none;
+    }
+    .horizontal-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      background: #fff;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    .horizontal-slider::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      background: #fff;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    /* Fullscreen adjustments for video container */
+    :fullscreen #videoContainer,
+    :-webkit-full-screen #videoContainer {
+      width: 100% !important;
+      height: 100% !important;
+    }
+    /* Central overlay play button styling */
+    #centerPlayButton {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+      padding: 1rem;
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 9999px;
+      transition: opacity 0.3s ease-in-out;
+      cursor: pointer;
+    }
+    /* Bottom left play/pause button styling */
+    #bottomLeftButton {
+      position: absolute;
+      bottom: 1rem;
+      left: 1rem;
+      z-index: 10;
+      padding: 0.75rem;
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 9999px;
+      transition: opacity 0.3s ease-in-out;
+      cursor: pointer;
+      opacity: 0; /* initially hidden */
+    }
+  </style>
+</head>
+<body class="bg-[#1E1E1E] text-white">
+  <!-- Video Section (full viewport height) -->
+  <div id="videoSection" class="w-full h-screen flex justify-center items-center">
+    <!-- Video Container with 16:9 aspect ratio, 70% viewport width, centered, with rounded corners and a shadow -->
+    <div id="videoContainer" class="relative w-[70vw] aspect-video rounded-[10px] shadow-2xl">
+      <canvas id="video1" width="1920" height="1080" 
+              class="absolute inset-0 w-full h-full bg-black rounded-[10px]"></canvas>
+      <!-- Central Overlay Play Button -->
+      <button id="centerPlayButton">
+        <svg class="w-12 h-12" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M6 4l12 6-12 6V4z"/>
+        </svg>
+      </button>
+      <!-- Bottom Left Overlay Play/Pause Button -->
+      <button id="bottomLeftButton">
+        <svg id="bottomLeftIcon" class="w-6 h-6" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M6 4l12 6-12 6V4z"/>
+        </svg>
+      </button>
+      <!-- Existing Overlay Custom Controls (Mute, Volume, Fullscreen) -->
+      <div id="customControls" class="absolute bottom-4 right-4 flex items-center gap-4 transition-opacity duration-300 opacity-0">
+        <button id="muteBtn" class="bg-black bg-opacity-70 p-3 rounded-full">
+          <svg id="muteIcon" class="w-6 h-6" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M9 5.82V2L3 8l6 6v-3.82l4.18 4.18L15 14l-5-5 5-5-1.82-1.82L9 5.82z"/>
+          </svg>
+        </button>
+        <div id="volumeControl" class="relative flex items-center">
+          <button id="volumeBtn" class="bg-black bg-opacity-70 p-3 rounded-full">
+            <svg id="volumeIcon" class="w-6 h-6" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M3 8v4h4l5 5V3l-5 5H3z"/>
+            </svg>
+          </button>
+          <div id="volumeSliderContainer" class="volume-slider-container flex items-center">
+            <input id="volumeSlider" type="range" min="0" max="1" step="0.05" value="0.5" 
+                   class="horizontal-slider">
+          </div>
+        </div>
+        <button id="fullscreenBtn" class="bg-black bg-opacity-70 p-3 rounded-full">
+          <svg class="w-6 h-6" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M4 4h6v2H6v4H4V4zm12 0v6h-2V6h-4V4h6zm0 12h-6v-2h4v-4h2v6zm-12 0v-6h2v4h4v2H4z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NodePlayer.js (WASM Decoder) -->
+  <script src="/js/NodePlayer.min.js"></script>
+  <script>
+    let player;
+    let isPlaying = false;
+    let streamLink = '';
+    let bufferTime = 100; // default value
+
+    // Variable to store the latest stats from the player
+    let lastStats = null;
+    // Threshold (in seconds) to decide when the stream is lagging
+    const LAG_THRESHOLD = 3; 
+
+    // Fetch buffer configuration from /api/config
+    fetch('/api/config')
+      .then(response => response.json())
+      .then(data => {
+        if (data && data.stream && data.stream.buffer !== undefined) {
+          bufferTime = data.stream.buffer;
+        }
+        console.log("Buffer time set to:", bufferTime);
+      })
+      .catch(err => {
+        console.log("Error fetching config, using default buffer of 100. Error:", err);
+        bufferTime = 100;
+      });
+
+    // Fetch stream link from /api/streamLink/main and extract the URL from the JSON response
+    fetch('/api/streamLink/main')
+      .then(response => response.json())
+      .then(data => {
+        if (data && data.link) {
+          streamLink = data.link;
+        }
+        console.log("Stream link received:", streamLink);
+      })
+      .catch(err => {
+        console.log("Error fetching stream link:", err);
+      });
+
+    // Load and initialize NodePlayer.js
+    NodePlayer.load(() => {
+      player = new NodePlayer();
+      player.setKeepScreenOn();
+      player.setView("video1"); // canvas element
+      // Set the buffer time from config
+      player.setBufferTime(bufferTime);
+
+      player.on("start", () => {
+        console.log("player on start");
+      });
+      player.on("stop", () => {
+        console.log("player on stop");
+      });
+      player.on("error", (e) => {
+        console.log("player on error", e);
+      });
+      player.on("videoInfo", (w, h, codec) => {
+        console.log("player on video info", w, h, codec);
+      });
+      player.on("audioInfo", (r, c, codec) => {
+        console.log("player on audio info", r, c, codec);
+      });
+      // Update lastStats every time stats are reported.
+      player.on("stats", (stats) => {
+        console.log("player on stats=", stats);
+        lastStats = stats;
+      });
+    });
+
+    // Set up a periodic check (every 5 seconds) to see if the player is lagging
+    setInterval(() => {
+      // Only check if playback is active and we have stats info.
+      if (isPlaying && lastStats && typeof lastStats.liveDelay === 'number') {
+        // If the stream is lagging behind the live edge beyond the threshold,
+        // restart the playback to catch up.
+        if (lastStats.liveDelay > LAG_THRESHOLD) {
+          console.log("Stream lag detected (liveDelay =", lastStats.liveDelay, "s). Catching up...");
+          player.stop();
+          // Restart playback; this should load the latest frames.
+          player.start(streamLink);
+        }
+      }
+    }, 5000);
+
+    // Get references to new control elements
+    const centerPlayButton = document.getElementById("centerPlayButton");
+    const bottomLeftButton = document.getElementById("bottomLeftButton");
+    const bottomLeftIcon = document.getElementById("bottomLeftIcon");
+    const videoContainer = document.getElementById("videoContainer");
+
+    // Central play button click: start playback and fade out the button.
+    centerPlayButton.addEventListener("click", () => {
+      if (streamLink) {
+        player.start(streamLink);
+        isPlaying = true;
+        // Change bottom left icon to pause icon
+        bottomLeftIcon.innerHTML = '<path d="M5 4h4v12H5zM11 4h4v12h-4z" />';
+        // Fade out central button
+        centerPlayButton.style.opacity = "0";
+        setTimeout(() => {
+          centerPlayButton.style.display = "none";
+        }, 300);
+      } else {
+        console.log("Stream link not available.");
+      }
+    });
+
+    // Bottom left button click: toggle play/pause
+    bottomLeftButton.addEventListener("click", () => {
+      if (isPlaying) {
+        // Stop playback and change icon to play
+        player.stop();
+        isPlaying = false;
+        bottomLeftIcon.innerHTML = '<path d="M6 4l12 6-12 6V4z"/>';
+        // Show the central play button again for restarting playback
+        centerPlayButton.style.display = "block";
+        setTimeout(() => {
+          centerPlayButton.style.opacity = "1";
+        }, 10);
+      } else {
+        // Restart playback (fetch the most recent frame by reloading the stream)
+        if (streamLink) {
+          player.start(streamLink);
+          isPlaying = true;
+          bottomLeftIcon.innerHTML = '<path d="M5 4h4v12H5zM11 4h4v12h-4z" />';
+          centerPlayButton.style.display = "none";
+        } else {
+          console.log("Stream link not available.");
+        }
+      }
+    });
+
+    // Show/hide bottom left button on hover only if video is playing
+    videoContainer.addEventListener("mouseenter", () => {
+      if (isPlaying) {
+        bottomLeftButton.style.opacity = "1";
+      }
+    });
+    videoContainer.addEventListener("mouseleave", () => {
+      bottomLeftButton.style.opacity = "0";
+    });
+
+    // Existing overlay controls for mute, volume, and fullscreen
+    const muteBtn = document.getElementById("muteBtn");
+    const muteIcon = document.getElementById("muteIcon");
+    const volumeSlider = document.getElementById("volumeSlider");
+    const volumeSliderContainer = document.getElementById("volumeSliderContainer");
+    const volumeControl = document.getElementById("volumeControl");
+    const fullscreenBtn = document.getElementById("fullscreenBtn");
+
+    let isMuted = false;
+    let lastVolume = 0.5;
+
+    volumeControl.addEventListener("mouseenter", () => {
+      volumeSliderContainer.classList.add("expanded");
+    });
+    volumeControl.addEventListener("mouseleave", () => {
+      volumeSliderContainer.classList.remove("expanded");
+    });
+
+    muteBtn.addEventListener("click", () => {
+      isMuted = !isMuted;
+      if (isMuted) {
+        lastVolume = volumeSlider.value;
+        player.setVolume(0);
+        muteIcon.innerHTML = '<path d="M10 8.586l-2.293-2.293-1.414 1.414L8.586 10l-2.293 2.293 1.414 1.414L10 11.414l2.293 2.293 1.414-1.414L11.414 10l2.293-2.293-1.414-1.414L10 8.586z"/>';
+      } else {
+        player.setVolume(lastVolume);
+        muteIcon.innerHTML = '<path d="M9 5.82V2L3 8l6 6v-3.82l4.18 4.18L15 14l-5-5 5-5-1.82-1.82L9 5.82z"/>';
+      }
+    });
+
+    volumeSlider.addEventListener("input", (e) => {
+      player.setVolume(e.target.value);
+      if (parseFloat(e.target.value) > 0) {
+        isMuted = false;
+        muteIcon.innerHTML = '<path d="M9 5.82V2L3 8l6 6v-3.82l4.18 4.18L15 14l-5-5 5-5-1.82-1.82L9 5.82z"/>';
+      }
+    });
+
+    fullscreenBtn.addEventListener("click", () => {
+      const container = document.getElementById("videoContainer");
+      if (!document.fullscreenElement) {
+        container.requestFullscreen().catch(err => console.error(err));
+      } else {
+        document.exitFullscreen();
+      }
+    });
+
+    // Also, keep existing hover logic for custom controls on the bottom right.
+    videoContainer.addEventListener("mouseenter", () => {
+      document.getElementById("customControls").classList.remove("opacity-0");
+      document.getElementById("customControls").classList.add("opacity-100");
+    });
+    videoContainer.addEventListener("mouseleave", () => {
+      document.getElementById("customControls").classList.remove("opacity-100");
+      document.getElementById("customControls").classList.add("opacity-0");
+    });
+  </script>
+</body>
+</html>

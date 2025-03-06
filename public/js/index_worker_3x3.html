@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<!-- saved from url=(0054)http://demo.nodemedia.cn/uploads/worker/index_3x3.html -->
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+    <title>NodePlayer.js Worker Decode Demo 3x3</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <style>
+        .box {
+            margin: 8px 0;
+            display: flex;
+        }
+
+        .fl1 {
+            flex: 1;
+        }
+
+        .fl0 {
+            flex: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div style="max-width:1080px;margin:0 auto">
+        <h3><a href="http://www.nodemedia.cn/" target="_blank">NodePlayer.js Worker Decode Demo</a></h3>
+        <p>
+            js为单线程运行时, 无法通过多线程提升并发性能.<br>
+            worker解码版NodePlayer.js, 将音视频解码在worker中进行, 能有效利用多核处理器提升多画面播放的流畅度.
+            chrome限制同源http请求最多6个并发, 因此超过6个并发请求我们采用websocket-flv来播放, 请准备NMSv3服务端来测试.
+            worker js不能跨域调用, 因此部署时只能放置在web项目路径下, 不能使用跨域的cdn. 但可以使用全站cdn对静态资源加速.
+            NodePlayerWorker.min.js 无需手动导入
+        </p>
+        <table style="width:100%;">
+            <tbody>
+                <tr>
+                    <td>
+                        <div style=" width:100%; padding-bottom:75%;position:relative;">
+                            <canvas id="video1" style="width:100%;height:100%;position:absolute;" width="251"
+                                height="188"></canvas>
+                        </div>
+                    </td>
+                    <td>
+                        <div style="width:100%; padding-bottom:75%;position:relative;">
+                            <canvas id="video2" style="width:100%;height:100%;position:absolute;" width="251"
+                                height="188"></canvas>
+                        </div>
+                    </td>
+                    <td>
+                        <div style="width:100%; padding-bottom:75%;position:relative;">
+                            <canvas id="video3" style="width:100%;height:100%;position:absolute;" width="251"
+                                height="188"></canvas>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div style="width:100%; padding-bottom:75%;position:relative;">
+                            <canvas id="video4" style="width:100%;height:100%;position:absolute;" width="251"
+                                height="188"></canvas>
+                        </div>
+                    </td>
+                    <td>
+                        <div style="width:100%; padding-bottom:75%;position:relative;">
+                            <canvas id="video5" style="width:100%;height:100%;position:absolute;" width="251"
+                                height="188"></canvas>
+                        </div>
+                    </td>
+                    <td>
+                        <div style="width:100%; padding-bottom:75%;position:relative;">
+                            <canvas id="video6" style="width:100%;height:100%;position:absolute;" width="251"
+                                height="188"></canvas>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div style="width:100%; padding-bottom:75%;position:relative;">
+                            <canvas id="video7" style="width:100%;height:100%;position:absolute;" width="251"
+                                height="188"></canvas>
+                        </div>
+                    </td>
+                    <td>
+                        <div style="width:100%; padding-bottom:75%;position:relative;">
+                            <canvas id="video8" style="width:100%;height:100%;position:absolute;" width="251"
+                                height="188"></canvas>
+                        </div>
+                    </td>
+                    <td>
+                        <div style="width:100%; padding-bottom:75%;position:relative;">
+                            <canvas id="video9" style="width:100%;height:100%;position:absolute;" width="251"
+                                height="188"></canvas>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+
+        <div>
+            <input id="url1" style="width: 100%" value="ws://192.168.0.2:8000/live/bbb_264.flv"><br>
+            <input id="url2" style="width: 100%" value="ws://192.168.0.2:8000/live/bbb_264.flv"><br>
+            <input id="url3" style="width: 100%" value="ws://192.168.0.2:8000/live/bbb_264.flv"><br>
+            <input id="url4" style="width: 100%" value="ws://192.168.0.2:8000/live/bbb_264.flv"><br>
+            <input id="url5" style="width: 100%" value="ws://192.168.0.2:8000/live/bbb_264.flv"><br>
+            <input id="url6" style="width: 100%" value="ws://192.168.0.2:8000/live/bbb_264.flv"><br>
+            <input id="url7" style="width: 100%" value="ws://192.168.0.2:8000/live/bbb_264.flv"><br>
+            <input id="url8" style="width: 100%" value="ws://192.168.0.2:8000/live/bbb_264.flv"><br>
+            <input id="url9" style="width: 100%" value="ws://192.168.0.2:8000/live/bbb_264.flv"><br>
+
+
+            <div class="box">
+                <div class="fl1">
+                    <button id="play" class="fl0" onclick="startFunc()">Play</button>
+                    <button id="stop" class="fl0" onclick="stopFunc()">Stop</button>
+                </div>
+
+                <div class="fl1">
+                    <label>ScaleMode:</label>
+                    <select onchange="scaleModeChange(event);">
+                        <option>0</option>
+                        <option>1</option>
+                        <option>2</option>
+                    </select>
+                </div>
+
+            </div><!-- /input-group -->
+
+
+        </div>
+
+    </div>
+
+    <script type="text/javascript" src="./NodePlayer.min.js"></script>
+    <script>
+        /**
+       * 是否打印debug信息
+       */
+        // NodePlayer.debug(true);
+        var players = [];
+        NodePlayer.load(() => {
+            for (let i = 0; i < 9; i++) {
+                let player = new NodePlayer();
+                player.useWorker(); //调用后自动加载NodePlayerWorker.min.js
+                players.push(player);
+            }
+
+            for (let i = 0; i < 9; i++) {
+                let player = players[i];
+                player.setView("video" + (i + 1));
+                player.setBufferTime(1000);
+                player.on("start", () => {
+                    console.log("player on start");
+                });
+
+                player.on("stop", () => {
+                    console.log("player on stop");
+                });
+
+                player.on("error", e => {
+                    console.log("player on error", e);
+                });
+
+                player.on("videoInfo", (w, h) => {
+                    console.log("player on video info width=" + w + " height=" + h);
+                })
+
+                player.on("audioInfo", (r, c) => {
+                    console.log("player on audio info samplerate=" + r + " channels=" + c);
+                })
+
+                // player.on("stats", (stats) => {
+                //     console.log("player on stats=", stats);
+                // })
+            }
+
+
+        });
+
+
+        var startFunc = function () {
+            for (let i = 0; i < 9; i++) {
+                let player = players[i];
+                var url = document.getElementById("url" + (i + 1));
+                player.start(url.value);
+            }
+        };
+
+        var stopFunc = function () {
+            /**
+             * 停止播放
+             */
+            for (let i = 0; i < 9; i++) {
+                let player = players[i];
+                player.stop();
+            }
+        };
+
+
+        var volumeChange = function (event) {
+            /**
+             * 设置音量
+             * 0.0  ~~ 1.0
+             * 当为0.0时,完全静音, 最大1.0
+             */
+            for (let i = 0; i < 9; i++) {
+                let player = players[i];
+                player.setVolume(event.target.value / 100.0);
+            }
+        }
+
+        var scaleModeChange = function (event) {
+            /**
+             * 视频缩放模式, 当视频分辨率比例与Canvas显示区域比例不同时,缩放效果不同:
+             *  0 视频画面完全填充canvas区域,画面会被拉伸 --- 默认值
+             *  1 视频画面做等比缩放后,对齐Canvas区域,画面不被拉伸,但有黑边
+             *  2 视频画面做等比缩放后,完全填充Canvas区域,画面不被拉伸,没有黑边,但画面显示不全
+             * 软解时有效
+             */
+            for (let i = 0; i < 9; i++) {
+                let player = players[i];
+                player.setScaleMode(event.target.value);
+            }
+        };
+
+    </script>
+
+
+
+</body>
+
+</html>
