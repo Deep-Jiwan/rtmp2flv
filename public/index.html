@@ -1,27 +1,23 @@
-<!-- Uses the videoPlayer class and CSS. 
- Usecase: Use this as  the defualt site. not that you will need to expose 2 ports if you plan to use this. The express app port and the flv link port. 
- Unless your flv links are external.
-  -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FLV Video Player</title>
+  <!-- External CSS for the video player -->
   <link rel="stylesheet" href="/css/videoplayer.css">
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- NodePlayer.js (WASM Decoder) -->
   <script src="/js/NodePlayer.min.js"></script>
 </head>
-
 <body class="bg-[#1E1E1E] text-white">
-  <!--  mx-auto to center horizontally -->
+  <!-- Container for the video player with mx-auto to center horizontally -->
   <div id="video2" class="w-[70vw] aspect-video rounded-[10px] shadow-2xl mx-auto"></div>
-  <!-- custom video player logic -->
+  <!-- Our custom video player logic -->
   <script src="/js/videoPlayer.js"></script>
   <script>
     spawnVideoPlayer("#video2", "");
   </script>
 </body>
-
-
 </html>

@@ -9,8 +9,8 @@ require("dotenv").config();
 // Load configuration from environment variables or fallback to defaults
 const STREAM_IP = process.env.STREAM_IP || "localhost";
 const MAIN_PORT = process.env.MAIN_PORT || 3000;
-const INTERNAL_STREAM_PORT = process.env.INTERNAL_STREAM_PORT || 1200;
-const EXPOSED_IP = process.env.EXPOSED_IP ||"localhost:3000";
+const INTERNAL_STREAM_PORT = process.env.INTERNAL_STREAM_PORT || 8000;
+const EXPOSED_IP = process.env.EXPOSED_IP;
 
 // NodeMediaServer configuration on an internal port (not exposed directly)
 const nmsConfig = {
