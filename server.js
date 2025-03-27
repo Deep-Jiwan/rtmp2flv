@@ -23,7 +23,7 @@ const nmsConfig = {
     ping_timeout: 30,
   },
   http: {
-    port: INTERNAL_STREAM_PORT, // Internal port for streaming endpoints
+    port: INTERNAL_STREAM_PORT,
     mediaroot: "./media",
     allow_origin: "*",
   },
@@ -47,9 +47,8 @@ app.use(
 // Serve static files from the "public" directory
 app.use(express.static(path.join(__dirname, "public")));
 
-// API endpoint for dynamic stream link generation
+// API endpoint for home.html
 app.get("/api/streamLink/main", (req, res) => {
-  // Dynamically generate the stream link using the host IP
   const streamLink = `http://${EXPOSED_IP}/proxy/`;
   console.log("Providing stream link:", streamLink);
   res.json({ link: streamLink });
@@ -77,7 +76,6 @@ app.get('/api/links', (req, res) => {
     }
     
     try {
-      // Parse JSON to verify it's valid (optional - you can simply send raw data if preferred)
       const links = JSON.parse(data);
       res.json(links);
     } catch (parseError) {

@@ -1,15 +1,17 @@
 name: Docker Image maker
 
 on:
-    push
+  push:
+    branches:
+      - docker
 
 jobs:
-    build_and_publish:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v3
-            - name: Build and push the image
-              run: |
-                docker login --username deep-jiwan --password ${{ secrets.GH_ACCESS }} ghcr.io
-                docker build --tag ghcr.io/deep-jiwan/rtmp2flv:beta . 
-                docker push ghcr.io/deep-jiwan/rtmp2flv:beta
+  build_and_publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build and push the image
+        run: |
+          docker login --username deep-jiwan --password ${{ secrets.GH_ACCESS }} ghcr.io
+          docker build --tag ghcr.io/deep-jiwan/rtmp2flv:beta .
+          docker push ghcr.io/deep-jiwan/rtmp2flv:beta
