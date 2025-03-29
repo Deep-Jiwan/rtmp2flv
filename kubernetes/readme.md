@@ -15,7 +15,7 @@ This README provides comprehensive guidance for setting up, deploying, and manag
   - [ConfigMap](#configmap)
 - [Implementing Auto-Scaling (HPA)](#implementing-auto-scaling-hpa)
 - [Logging](#logging)
-- [Rolling Updates & Rollbacks](#rolling-updates--rollbacks)
+- [Testing Scenarios](#Testing-Scenarios)
 
 
 
@@ -89,27 +89,27 @@ This README provides comprehensive guidance for setting up, deploying, and manag
 
 ## Application and Dockerization   
 
-# Docker File Explanation
+### Docker File Explanation
 
 This Dockerfile creates a lightweight container for my RTMP2FLV application.   
 Read more about this application [here](https://github.com/Deep-Jiwan/rtmp2flv)    
 Here's a breakdown of each instruction:
 
-## Base Image
+### Base Image
 ```dockerfile
 FROM node:alpine
 ```
 - Uses the official Node.js image with Alpine Linux as the base
 - Alpine is chosen for its small footprint (typically <5MB), resulting in smaller overall container size
 
-## Working Directory
+### Working Directory
 ```dockerfile
 WORKDIR /app
 ```
 - Sets the working directory inside the container to `/app`
 - All subsequent commands will run from this location
 
-## Dependency Management
+### Dependency Management
 ```dockerfile
 COPY package*.json ./
 RUN npm install
@@ -118,7 +118,7 @@ RUN npm install
 - Runs npm install to install dependencies
 - This approach leverages Docker's layer caching for faster builds (dependencies won't reinstall unless package files change)
 
-## Application Code
+### Application Code
 ```dockerfile
 COPY server.js ./
 COPY . .
@@ -127,7 +127,7 @@ COPY . .
 - Then copies all remaining files from the current directory on the host to the working directory in the container
 - Note: Copying server.js separately is redundant since the subsequent command copies everything
 
-## Port Configuration
+### Port Configuration
 ```dockerfile
 EXPOSE 3000 1935 1200
 ```
@@ -137,7 +137,7 @@ EXPOSE 3000 1935 1200
   - 1935: Commonly used for RTMP (Real-Time Messaging Protocol)
   - 1200: Custom application port
 
-## Start Command
+### Start Command
 ```dockerfile
 CMD [ "node", "server.js" ]
 ```
