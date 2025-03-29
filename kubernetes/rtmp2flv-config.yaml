@@ -1,0 +1,12 @@
+# This was not used but is submitted for reference of how to use
+# It is used to store config information
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rtmp2flv-config
+data:
+  STREAM_IP: "localhost"
+  INTERNAL_STREAM_PORT: "1200"
+  EXPOSED_IP: "localhost:3000"
+  MAIN_PORT: "3000"
